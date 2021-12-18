@@ -13,6 +13,7 @@ let solver = false; // Not busy
 /*
     Expected input:
     {
+        solverID: number
         problemID: string,
         data: string,
         model: string,
