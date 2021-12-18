@@ -19,6 +19,8 @@ let solver = false; // Not busy
         solver: string|false,
         flagS: boolean,
         flagF: boolean,
+        cpus: string,
+        memory: string
     }
 */
 export async function solve(msg, publish){
@@ -31,7 +33,7 @@ export async function solve(msg, publish){
     fs.writeFileSync("model.mzn", msg.model);
     fs.writeFileSync("data.dzn", msg.data);
 
-    solver = new Solver(msg.problemID, "model.mzn", "data.dzn", msg.solver, msg.flagS, msg.flagF);
+    solver = new Solver(msg.problemID, "model.mzn", "data.dzn", msg.solver, msg.flagS, msg.flagF, msg.cpus, msg.memory);
     solver.onFinish = data => {
         if(data && data[data.length - 1].optimal) // Solver found optimal
         {

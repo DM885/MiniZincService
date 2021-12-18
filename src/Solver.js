@@ -6,11 +6,11 @@ export default class Solver {
     #callback = () => {};
     id;
 
-    constructor(id, dataPath, modelPath, solver, statistisk = false, freeSearch = false)
+    constructor(id, dataPath, modelPath, solver, statistisk = false, freeSearch = false, cpus = "0", memory = "0m")
     {
         this.id = id;
 
-        const CMD = this.#buildCommand(dataPath, modelPath, solver, statistisk, freeSearch);
+        const CMD = this.#buildCommand(dataPath, modelPath, solver, statistisk, freeSearch, cpus, memory);
         this.#solver = exec(CMD,  {}, (err, stdout, stderr) => this.#onDone(err, stdout, stderr));
         this.#solver.stdout.on('data', d => this.#onData(d));
     }
@@ -27,7 +27,7 @@ export default class Solver {
      * Builds the MiniZinc CLI command.
      */
     #DOCKER_DIR = "/sharedData/";
-    #buildCommand(dataPath, modelPath, solver, statistisk, freeSearch, dockerImage = "minizinc/minizinc")
+    #buildCommand(dataPath, modelPath, solver, statistisk, freeSearch, cpus, memory, dockerImage = "minizinc/minizinc")
     {
         const addFlag = (bool, flag) => {
             if(bool)
@@ -46,7 +46,7 @@ export default class Solver {
         addFlag(statistisk, "s");
         addFlag(freeSearch, "f");
 
-        return `docker pull --quiet ${dockerImage} && docker run --rm -v ${process.cwd()}/shared/:${this.#DOCKER_DIR} ${dockerImage} /bin/bash -c "${cmd}"`;
+        return `docker pull --quiet ${dockerImage} && docker run --rm -v --cpus="${cpus}" --memory="${memory}" ${process.cwd()}/shared/:${this.#DOCKER_DIR} ${dockerImage} /bin/bash -c "${cmd}"`;
     }
 
     #PARSE_DELIMTERS = {
