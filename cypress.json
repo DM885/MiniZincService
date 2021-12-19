@@ -1,6 +1,7 @@
 {
     "baseUrl": "http://127.0.0.1:3000",
+    "retries": 4,
     "requestTimeout": 2000,
-    "defaultCommandTimeout": 5000,
-    "retries": 3
+    "responseTimeout": 4000,
+    "defaultCommandTimeout": 4000
 }
