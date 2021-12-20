@@ -38,7 +38,7 @@ describe("Minizinc Solver Tests", () => {
         expect(publishFn).toHaveBeenCalledTimes(1);
         expect(publishFn).toHaveBeenCalledWith("solver-pong-response", {
             solverID,
-            busy: false
+            problemID: -1
         })
     });
 
