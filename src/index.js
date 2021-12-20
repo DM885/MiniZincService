@@ -2,31 +2,35 @@ import fs from "fs";
 import uid from "uid-safe";
 import rapid from "@ovcina/rapidriver";
 
-import helpers from "./helpers.js";
+import {host, subscriber} from "./helpers.js";
 import Solver from "./Solver.js";
 
-export let solverID = Math.random() * 500;
+let solverID = Math.random() * 500;
 uid(18).then(id => solverID = id);
 
+let queue = [];
 let solver = false; // Not busy
+
+// TODO: Add job queue,
 
 /*
     Expected input:
     {
-        solverID: number
         problemID: string,
         data: string,
         model: string,
         solver: string|false,
         flagS: boolean,
         flagF: boolean,
-        cpus: string,
-        memory: string
     }
 */
 export async function solve(msg, publish){
     if(solver || msg.solverID !== solverID) // Solver is busy
     {
+        if(msg.solverID === solverID && solver) // Its already busy, but the task has been assigned to it.
+        {
+            queue.push(msg);
+        }
         return;
     }
     solver = true; // Busy while were writing to disk
@@ -34,7 +38,12 @@ export async function solve(msg, publish){
     fs.writeFileSync("model.mzn", msg.model);
     fs.writeFileSync("data.dzn", msg.data);
 
-    solver = new Solver(msg.problemID, "model.mzn", "data.dzn", msg.solver, msg.flagS, msg.flagF, msg.cpus, msg.memory);
+    solver = new Solver(msg.problemID, "model.mzn", "data.dzn", msg.solver, msg.flagS, msg.flagF, msg.cpuLimit, msg.memoryLimit, msg.timeLimit, msg.dockerImage);
+    
+    publish("solver-pong-response", { // Tell our JobQueues that this solver is busy.
+        solverID,
+        problemID: msg.problemID
+    }); 
     solver.onFinish = data => {
         if(data && data[data.length - 1].optimal) // Solver found optimal
         {
@@ -44,12 +53,17 @@ export async function solve(msg, publish){
         }
 
         solver = false;
-        publish("solver-response", { // Stop other solvers working on this problem
+        publish("solver-response", { 
             problemID: msg.problemID,
             solverID,
             data,
-            busy: false,
+            busy: queue.length > 0,
         }); 
+
+        if(queue.length > 0)
+        {
+            solve(queue.shift(), publish);
+        }
     };
 }
 
@@ -64,7 +78,7 @@ export async function stopSolve(msg, publish){
 
     publish("solver-pong-response", {
         solverID,
-        busy: !!solver,
+        problemID: solver?.problemID ?? -1
     });
 }
 
@@ -82,11 +96,15 @@ export async function ping(msg, publish){
 
 if(process.env.RAPID)
 {
-    helpers.subscriber(helpers.host, [
+    subscriber(host, [
         {river: "solver", event: "solve", work: solve},
         {river: "solver", event: "stopSolve", work: stopSolve},
         {river: "solver", event: "solver-ping", work: ping},
     ]);
 
-    setTimeout(() => ping({}, (event, data) => rapid.publish(helpers.host, event, data)), 1500); // Tell job-queue about us
+    setTimeout(() => rapid.publish(host, "solver-pong-response", {
+        solverID,
+        problemID: solver?.problemID ?? -1,
+        respond: true,
+    }), 1500); // Tell job-queue about us
 }
