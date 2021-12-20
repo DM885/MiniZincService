@@ -2,10 +2,10 @@ import fs from "fs";
 import uid from "uid-safe";
 import rapid from "@ovcina/rapidriver";
 
-import {host, subscriber} from "./helpers.js";
+import helpers from "./helpers.js";
 import Solver from "./Solver.js";
 
-let solverID = Math.random() * 500;
+export let solverID = Math.random() * 500;
 uid(18).then(id => solverID = id);
 
 let queue = [];
@@ -96,13 +96,13 @@ export async function ping(msg, publish){
 
 if(process.env.RAPID)
 {
-    subscriber(host, [
+    helpers.subscriber(helpers.host, [
         {river: "solver", event: "solve", work: solve},
         {river: "solver", event: "stopSolve", work: stopSolve},
         {river: "solver", event: "solver-ping", work: ping},
     ]);
 
-    setTimeout(() => rapid.publish(host, "solver-pong-response", {
+    setTimeout(() => rapid.publish(helpers.host, "solver-pong-response", {
         solverID,
         problemID: solver?.problemID ?? -1,
         respond: true,
