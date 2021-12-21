@@ -1,4 +1,3 @@
-import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 import {solverID, solve, stopSolve, ping} from '../src/index.js';
 import helpers from '../src/helpers.js';
 import fs from 'fs';
@@ -16,20 +15,20 @@ const publishFn = jest.fn();
 
 describe("Minizinc Solver Tests", () => {
     beforeEach(async () => {
-//        Solver.mockClear();
+        Solver.mockClear();
         helpers.query.mockClear();
         fs.writeFileSync.mockClear();
         publishFn.mockClear();
     })
 
-    // Solve 
+    // Solve
     it("Should start a solver instance when solve is called", async () => {
         //Call the solve function.
         const msg = {solverID: solverID, problemID: 1, model: "model.mzn", data: "data.dzn",
                     solver: false, flagS: false, flagF: false, cpuLimit: 5, memoryLimit: 100};
         await solve(msg, publishFn);
 
-        //Expect that a solver has been started. 
+        //Expect that a solver has been started.
         expect(Solver).toHaveBeenCalledTimes(1);
     });
 
@@ -38,9 +37,9 @@ describe("Minizinc Solver Tests", () => {
         //Call the solve function.
         const msg = {solverID: solverID, problemID: 1, model: "model.mzn", data: "data.dzn",
                     solver: false, flagS: false, flagF: false, cpuLimit: 5, memoryLimit: 100};
-        
 
-        //Expect that the database has been queried. 
+
+        //Expect that the database has been queried.
         expect(await solve(msg, publishFn)).toBeUndefined();
     });
 
@@ -57,7 +56,7 @@ describe("Minizinc Solver Tests", () => {
             solverID,
             problemID: msg.problemID
         })
-    });    
+    });
 
     it("Should write to the filesystem when solving", async () => {
         //Call the solve function.
@@ -65,7 +64,7 @@ describe("Minizinc Solver Tests", () => {
                     solve: "solver", flagS: false, flagF: false, cpus: 10, memory: 1};
         await solve(msg, publishFn);
 
-        //Expect that the database has been queried. 
+        //Expect that the database has been queried.
         expect(fs.writeFileSync).toHaveBeenCalledTimes(2);
     });
 
