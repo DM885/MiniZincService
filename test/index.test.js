@@ -2,8 +2,11 @@ import {solverID, solve, stopSolve, ping} from '../src/index.js';
 import helpers from '../src/helpers.js';
 import fs from 'fs';
 import Solver from '../src/Solver.js';
+import uid from 'uid-safe';
 
 jest.mock('../src/Solver.js');
+jest.mock('uid-safe');
+uid.mockReturnValue(500);
 
 const sessionId = 1;
 const requestId = 1;

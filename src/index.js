@@ -6,7 +6,12 @@ import helpers from "./helpers.js";
 import Solver from "./Solver.js";
 
 export let solverID = Math.random() * 500;
-uid(18).then(id => solverID = id);
+
+// Use setImmediate to make sure mocking of uid is working in jest.
+setImmediate(async () => {
+    solverID = await uid(18);
+});
+// uid(18).then(id => solverID = id);
 
 let queue = [];
 let solver = false; // Not busy
@@ -39,26 +44,26 @@ export async function solve(msg, publish){
     fs.writeFileSync("data.dzn", msg.data);
 
     solver = new Solver(msg.problemID, "model.mzn", "data.dzn", msg.solver, msg.flagS, msg.flagF, msg.cpuLimit, msg.memoryLimit, msg.timeLimit, msg.dockerImage);
-    
+
     publish("solver-pong-response", { // Tell our JobQueues that this solver is busy.
         solverID,
         problemID: msg.problemID
-    }); 
+    });
     solver.onFinish = data => {
         if(data && data[data.length - 1].optimal) // Solver found optimal
         {
             publish("stopSolve", { // Stop other solvers working on this problem
                 problemID: msg.problemID
-            }); 
+            });
         }
 
         solver = false;
-        publish("solver-response", { 
+        publish("solver-response", {
             problemID: msg.problemID,
             solverID,
             data,
             busy: queue.length > 0,
-        }); 
+        });
 
         if(queue.length > 0)
         {
@@ -87,7 +92,7 @@ export async function ping(msg, publish){
     {
         return;
     }
-    
+
     publish("solver-pong-response", {
         solverID,
         problemID: solver?.problemID ?? -1
